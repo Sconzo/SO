@@ -38,6 +38,7 @@ int Execucao_Padrao(char** cmd)
         int status;
         waitpid(-1,&status,0); // espera a mudança no processo filho
         printf("Valor Status -> %d\n",status);
+        return status;
     }
     else // caso de erro
     {
@@ -49,38 +50,112 @@ int Execucao_Padrao(char** cmd)
 
 void Tratar_Entrada(char** argv, int argc)
 {
-    
+
     char *argumentos_execucao[LIST_LEN];
     int cont=0;
     int migue = 1;
+    int status = -1;
+    int ultimo_comando = 0;
+    // 0->nada // 1->; // 2->|| // 3->&&
     memset(argumentos_execucao,0,sizeof(argumentos_execucao));
 
     for(int i=0;i<argc;i++)
     {
         
-        if (strcmp(argv[i],"|") == 0)
+        if (strcmp(argv[i],"|") == 0) // PIPE
         {
             operadores[cont_op] = argv[i];  
             cont_op++;
         }
         else if (strcmp(argv[i],";") == 0)
         {
-            operadores[cont_op] = argv[i];  
-            cont_op++;
             Execucao_Padrao(&argumentos_execucao[migue]);
             memset(argumentos_execucao,0,sizeof(argumentos_execucao));
             migue = 0;
             cont = 0;
+            ultimo_comando = 1;
         }
         else if (strcmp(argv[i],"||") == 0)
         {
-            operadores[cont_op] = argv[i];  
-            cont_op++;
+            if (ultimo_comando == 3)
+            {
+                if (status == 0)
+                {
+                    status = Execucao_Padrao(&argumentos_execucao[migue]);
+                    memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                    migue = 0;
+                    cont = 0;
+                    ultimo_comando = 2;
+                }
+                else
+                {
+                    status = 4;
+                    memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                    migue = 0;
+                    cont = 0;
+                    ultimo_comando = 2;
+                }
+            }
+            else if (ultimo_comando == 2)
+            {
+                if (status > 0)
+                {
+                    status = Execucao_Padrao(&argumentos_execucao[migue]);
+                    memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                    migue = 0;
+                    cont = 0;
+                    ultimo_comando = 2;
+                }
+            }
+            else{
+                status = Execucao_Padrao(&argumentos_execucao[migue]);
+                memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 2;
+            }
         }
         else if (strcmp(argv[i],"&&") == 0)
         {
-            operadores[cont_op] = argv[i];  
-            cont_op++;
+
+            if (ultimo_comando == 3)
+            {
+                if (status == 0)
+                {
+                    status = Execucao_Padrao(&argumentos_execucao[migue]);
+                    memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                    migue = 0;
+                    cont = 0;
+                    ultimo_comando = 3;
+                }
+                else
+                {
+                    status = 4;
+                    memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                    migue = 0;
+                    cont = 0;
+                    ultimo_comando = 3;
+                }
+            }
+            else if (ultimo_comando == 2)
+            {
+                if (status > 0)
+                {
+                    status = Execucao_Padrao(&argumentos_execucao[migue]);
+                    memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                    migue = 0;
+                    cont = 0;
+                    ultimo_comando = 3;
+                }
+            }
+            else{
+                status = Execucao_Padrao(&argumentos_execucao[migue]);
+                memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 3;
+            }
+            
         }
         else if (strcmp(argv[i],"&") == 0)
         {
@@ -94,7 +169,15 @@ void Tratar_Entrada(char** argv, int argc)
             cont_arg++;
         }
     }
-    if(migue<2) Execucao_Padrao(&argumentos_execucao[migue]);
+    if(ultimo_comando == 0 || ultimo_comando == 1) Execucao_Padrao(&argumentos_execucao[migue]);
+    if(ultimo_comando == 2)
+    {
+        if(status > 0)Execucao_Padrao(&argumentos_execucao[migue]);
+    }
+    if(ultimo_comando == 3)
+    {
+        if(status == 0)Execucao_Padrao(&argumentos_execucao[migue]);
+    }
     
 }
 
