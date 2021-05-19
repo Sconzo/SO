@@ -26,13 +26,10 @@ int Execucao_Padrao(char** cmd)
 {
     pid_t pid;
     pid = fork();
-
     if (pid == 0) // processo filho executa o comando
     {
-        
         // pegando a matriz de argumentos sem o executável
         execvp(cmd[0],cmd); //
-
         printf ("AAKOJDIAIJDNFONLNFL\n"); // Não é executado pq execvp() substitui a imagem do processo
                                         // filho com o novo processo definido por cmd[0]
     }
@@ -40,9 +37,7 @@ int Execucao_Padrao(char** cmd)
     {
         int status;
         waitpid(-1,&status,0); // espera a mudança no processo filho
-
         printf("Valor Status -> %d\n",status);
-
     }
     else // caso de erro
     {
@@ -98,6 +93,7 @@ void Tratar_Entrada(char** argv, int argc)
             cont_arg++;
         }
     }
+    if(migue<2) Execucao_Padrao(&argumentos_execucao[migue]);
     
 }
 
