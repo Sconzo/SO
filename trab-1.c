@@ -49,6 +49,7 @@ int Execucao_Padrao(char** cmd)
 
 void Tratar_Entrada(char** argv, int argc)
 {
+    
     char *argumentos_execucao[LIST_LEN];
     int cont=0;
     int migue = 1;
