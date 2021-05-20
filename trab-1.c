@@ -22,6 +22,30 @@ void Teste_Entrada(char** argv, int argc)
     }
 }
 
+int Execucao_Background(char** cmd)
+{
+    pid_t pid;
+    pid = fork();
+    if (pid == 0) // processo filho executa o comando
+    {
+        // pegando a matriz de argumentos sem o executável
+        execvp(cmd[0],cmd); //
+        printf ("AAKOJDIAIJDNFONLNFL\n"); // Não é executado pq execvp() substitui a imagem do processo
+                                        // filho com o novo processo definido por cmd[0]
+    }
+    else if (pid > 0) // processo pai espera o término do filho
+    {
+        int status;
+        printf("Valor Status -> %d\n",status);
+        return status;
+    }
+    else // caso de erro
+    {
+        perror("fork()");
+        return -1;
+    }
+}
+
 int Execucao_Padrao(char** cmd)
 {
     pid_t pid;
@@ -56,7 +80,7 @@ void Tratar_Entrada(char** argv, int argc)
     int migue = 1;
     int status = -1;
     int ultimo_comando = 0;
-    // 0->nada // 1->; // 2->|| // 3->&&
+    // 0->nada // 1->; // 2->|| // 3->&& // 4->& // 5->|
     memset(argumentos_execucao,0,sizeof(argumentos_execucao));
 
     for(int i=0;i<argc;i++)
@@ -64,8 +88,11 @@ void Tratar_Entrada(char** argv, int argc)
         
         if (strcmp(argv[i],"|") == 0) // PIPE
         {
-            operadores[cont_op] = argv[i];  
-            cont_op++;
+            //Execucao_Pipe(&argumentos_execucao[migue]);
+            memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+            migue = 0;
+            cont = 0;
+            ultimo_comando = 5;
         }
         else if (strcmp(argv[i],";") == 0)
         {
@@ -157,10 +184,14 @@ void Tratar_Entrada(char** argv, int argc)
             }
             
         }
+
         else if (strcmp(argv[i],"&") == 0)
         {
-            operadores[cont_op] = argv[i];  
-            cont_op++;
+            Execucao_Background(&argumentos_execucao[migue]);
+            memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+            migue = 0;
+            cont = 0;
+            ultimo_comando = 4;
         }
         else{
             argumentos[cont_arg] = argv[i]; 
