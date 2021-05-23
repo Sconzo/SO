@@ -89,23 +89,29 @@ void Tratar_Descritores(int entrada, int saida)
     Tratar_Descritores_Padrao(saida, STDOUT_FILENO);
 }
 
-void Execucao_Pipe(char** argv, int argc, int* i)
+int Execucao_Pipe(char** argv, int argc, int* i,int posicao_operador)
 {
     int k=0; int numpipes=1;
     int posicao_pipe[20]; int cont=0;
     int passados = *i-1;
+    //printf("Ponteiro de i -> %d\n", *i);
+    //printf("Posicao operador -> %d\n", posicao_operador);
     //pegando o numero de pipes
     //guardando os valores em que começam os argumentos
     posicao_pipe[0] = *i;
     //printf("argv[i] = %s\n", argv[*i]);
     for (k=*i; k<argc;k++)
     {
-        if (strcmp(argv[k],";") == 0){break;}
+        if (strcmp(argv[k],";") == 0 ||strcmp(argv[k],"||") == 0 ||strcmp(argv[k],"&&") == 0 ||strcmp(argv[k],"&") == 0){break;}
         if (strcmp(argv[k],"|") == 0) {
-            if (k==*i) posicao_pipe[cont] = *i-1;
+            if (k==*i) {
+                posicao_pipe[cont] = *i-posicao_operador -1;
+                //printf("quantarg[%d] = %d\n", cont,posicao_pipe[cont]);
+                }
             else 
             {
                 posicao_pipe[cont] = k - passados- 1 - cont;
+                //printf("quantarg[%d] = %d\n", cont,posicao_pipe[cont]);
                 passados = passados + posicao_pipe[cont];    
             }
             
@@ -115,14 +121,15 @@ void Execucao_Pipe(char** argv, int argc, int* i)
         
     }
     posicao_pipe[cont] = k - passados- 1 - cont;
-
+    //printf("quantarg[%d] = %d\n", cont,posicao_pipe[cont]);
     //estrutura para armazenar os argumentos pipes
     struct comando{
         char *argumentos[LIST_LEN];
     };
     
     struct comando comandos[20];
-    int j=1;
+    int j=posicao_operador+1;
+    //printf("j -> %d\n", j);
     //alocando os srgumentos
     
     for (int m=0;m<numpipes;m++)
@@ -135,8 +142,9 @@ void Execucao_Pipe(char** argv, int argc, int* i)
         }
         j = j+1;
     }
-    *i = k;
-
+    *i = k-1;
+    //printf("TESTE");
+    //printf("Ponteiro de i -> %d", *i);
     int entrada = STDIN_FILENO;
     int p;
 
@@ -145,7 +153,7 @@ void Execucao_Pipe(char** argv, int argc, int* i)
         
         int fd[2];
         pid_t pid;
-
+        int status;
         if(pipe(fd) == -1) perror("pipe()");
         if((pid = fork()) == -1) perror("fork()");
 
@@ -158,6 +166,7 @@ void Execucao_Pipe(char** argv, int argc, int* i)
         }
         else
         {
+            waitpid(-1,&status,0);
             //printf("TESTE\n");
             close(fd[1]);
             close(entrada);
@@ -167,7 +176,14 @@ void Execucao_Pipe(char** argv, int argc, int* i)
     }
     //printf("%d\n", p);
     Tratar_Descritores(entrada,STDOUT_FILENO);
+    int status;
+    pid_t pid2;
+    if((pid2 = fork()) == -1) perror("fork()");
+    if(pid2 == 0)
     execvp(comandos[p+1].argumentos[0],comandos[p+1].argumentos);
+    else waitpid(-1,&status,0);
+
+    return status;
 
 }
 
@@ -179,6 +195,7 @@ void Tratar_Entrada(char** argv, int argc)
     int migue = 1;
     int status = -1;
     int ultimo_comando = 0;
+    int posicao_operacao = 0;
     // 0->nada // 1->; // 2->|| // 3->&& // 4->& // 5->|
     memset(argumentos_execucao,0,sizeof(argumentos_execucao));
 
@@ -187,14 +204,27 @@ void Tratar_Entrada(char** argv, int argc)
         
         if (strcmp(argv[i],"|") == 0) // PIPE
         {
-            Execucao_Pipe(argv,argc,&i);
+            //printf("Antes do fork ->%d\n", i);
+            //pid_t pid;
+            //if((pid = fork()) == -1) perror("fork()");
+//
+            //if(pid == 0)
+            //{
+            //    Execucao_Pipe(argv,argc,&i);
+            //}
+            //else{
+            status = Execucao_Pipe(argv,argc,&i,posicao_operacao);
+            //printf("%d\n",status);
             memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+            //printf("Depois do fork ->%d\n", i);
             migue = 0;
             cont = 0;
             ultimo_comando = 5;
+            //}
         }
         else if (strcmp(argv[i],";") == 0)
         {
+            posicao_operacao = i; ////////////
             Execucao_Padrao(&argumentos_execucao[migue]);
             memset(argumentos_execucao,0,sizeof(argumentos_execucao));
             migue = 0;
@@ -243,7 +273,6 @@ void Tratar_Entrada(char** argv, int argc)
         }
         else if (strcmp(argv[i],"&&") == 0)
         {
-
             if (ultimo_comando == 3)
             {
                 if (status == 0)
@@ -299,6 +328,7 @@ void Tratar_Entrada(char** argv, int argc)
             cont_arg++;
         }
     }
+    
     if(ultimo_comando == 0 || ultimo_comando == 1) Execucao_Padrao(&argumentos_execucao[migue]);
     if(ultimo_comando == 2)
     {
