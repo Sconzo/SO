@@ -71,6 +71,55 @@ int Execucao_Padrao(char** cmd)
     }
 }
 
+void Execucao_Pipe(char** argv, int argc, int* i)
+{
+    int k=0; int numpipes=1;
+    int posicao_pipe[20]; int cont=0;
+    int passados = *i-1;
+    //pegando o numero de pipes
+    //guardando os valores em que começam os argumentos
+    posicao_pipe[0] = *i;
+    //printf("argv[i] = %s\n", argv[*i]);
+    for (k=*i; k<argc;k++)
+    {
+        if (strcmp(argv[k],";") == 0){break;}
+        if (strcmp(argv[k],"|") == 0) {
+            if (k==*i) posicao_pipe[cont] = *i-1;
+            else 
+            {
+                posicao_pipe[cont] = k - passados- 1 - cont;
+                passados = passados + posicao_pipe[cont];    
+            }
+            
+            numpipes++;
+            cont++;
+            }
+        
+    }
+    posicao_pipe[cont] = k - passados- 1 - cont;
+
+    //estrutura para armazenar os argumentos pipes
+    struct comando{
+        char *argumentos[LIST_LEN];
+    };
+    char *argumentos[LIST_LEN];
+    struct comando comandos[20];
+    int j=1;
+    //alocando os srgumentos
+    
+    for (int m=0;m<numpipes;m++)
+    {
+        for (int n = 0; n<posicao_pipe[m]; n++)
+        {
+            comandos[m].argumentos[n] = argv[j];
+            printf("comandos[%d].argumentos[%d] == %s\n", m,n,comandos[m].argumentos[n]);
+            j++;
+        }
+        j = j+1;
+    }
+    *i = k;
+
+}
 
 void Tratar_Entrada(char** argv, int argc)
 {
@@ -88,7 +137,7 @@ void Tratar_Entrada(char** argv, int argc)
         
         if (strcmp(argv[i],"|") == 0) // PIPE
         {
-            //Execucao_Pipe(&argumentos_execucao[migue]);
+            Execucao_Pipe(argv,argc,&i);
             memset(argumentos_execucao,0,sizeof(argumentos_execucao));
             migue = 0;
             cont = 0;
