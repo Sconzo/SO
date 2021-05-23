@@ -61,7 +61,7 @@ int Execucao_Padrao(char** cmd)
     {
         int status;
         waitpid(-1,&status,0); // espera a mudança no processo filho
-        printf("Valor Status -> %d\n",status);
+        //printf("Valor Status -> %d\n",status);
         return status;
     }
     else // caso de erro
@@ -69,6 +69,24 @@ int Execucao_Padrao(char** cmd)
         perror("fork()");
         return -1;
     }
+}
+
+void Tratar_Descritores_Padrao(int fd_velho, int fd_novo)
+{
+    if (fd_velho != fd_novo)
+    {
+        if (dup2(fd_velho,fd_novo) != -1)
+        {
+            close(fd_velho);
+        }
+        else perror("dup2()");
+    }
+}
+
+void Tratar_Descritores(int entrada, int saida)
+{
+    Tratar_Descritores_Padrao(entrada, STDIN_FILENO);
+    Tratar_Descritores_Padrao(saida, STDOUT_FILENO);
 }
 
 void Execucao_Pipe(char** argv, int argc, int* i)
@@ -102,7 +120,7 @@ void Execucao_Pipe(char** argv, int argc, int* i)
     struct comando{
         char *argumentos[LIST_LEN];
     };
-    char *argumentos[LIST_LEN];
+    
     struct comando comandos[20];
     int j=1;
     //alocando os srgumentos
@@ -112,12 +130,44 @@ void Execucao_Pipe(char** argv, int argc, int* i)
         for (int n = 0; n<posicao_pipe[m]; n++)
         {
             comandos[m].argumentos[n] = argv[j];
-            printf("comandos[%d].argumentos[%d] == %s\n", m,n,comandos[m].argumentos[n]);
+            //printf("comandos[%d].argumentos[%d] == %s\n", m,n,comandos[m].argumentos[n]);
             j++;
         }
         j = j+1;
     }
     *i = k;
+
+    int entrada = STDIN_FILENO;
+    int p;
+
+    for(int p=0;p<numpipes;p++)
+    {
+        
+        int fd[2];
+        pid_t pid;
+
+        if(pipe(fd) == -1) perror("pipe()");
+        if((pid = fork()) == -1) perror("fork()");
+
+        if(pid == 0)
+        {
+            
+            close(fd[0]);
+            Tratar_Descritores(entrada,fd[1]);
+            execvp(comandos[p].argumentos[0],comandos[p].argumentos);
+        }
+        else
+        {
+            //printf("TESTE\n");
+            close(fd[1]);
+            close(entrada);
+            entrada = fd[0];
+        }
+        
+    }
+    //printf("%d\n", p);
+    Tratar_Descritores(entrada,STDOUT_FILENO);
+    execvp(comandos[p+1].argumentos[0],comandos[p+1].argumentos);
 
 }
 
