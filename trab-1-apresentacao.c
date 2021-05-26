@@ -47,12 +47,12 @@ int Execucao_Padrao(char **cmd)
 {
     pid_t pid;
     pid = fork();
-    if (pid == 0)
+    if (pid == 0) // filho
     {
         execvp(cmd[0], cmd);
-        printf("AAKOJDIAIJDNFONLNFL\n");
+        printf("AAKOJDIAIJDNFONLNFL\n"); // nunca deve ocorrer esse print
     }
-    else if (pid > 0)
+    else if (pid > 0) //pai
     {
         int status;
         waitpid(-1, &status, 0);
@@ -87,34 +87,40 @@ void Tratar_Descritores(int entrada, int saida)
 int Execucao_Pipe(char **argv, int argc, int *i, int posicao_operador)
 {
     int k = 0;
-    int numpipes = 1;
-    int posicao_pipe[20];
+    int numpipes = 1; // numero de pipes
+    int quantarg[20]; //vetor que armazena a quantidade de argumentos em cada pipe, sendo que o indice do vetor eh o pipe respectivo
     int cont = 0;
-    int passados = *i - 1;
-    posicao_pipe[0] = *i;
-    for (k = *i; k < argc; k++)
+    int passados = *i - 1; // quantos argumentos já foram lidos anteriormente de argv
+    
+    quantarg[0] = *i;
+
+    for (k = *i; k < argc; k++) //laco for para encontrar todas as pipes
     {
+        // Break  se aparecer um novo operador
         if (strcmp(argv[k], ";") == 0 || strcmp(argv[k], "||") == 0 || strcmp(argv[k], "&&") == 0 || strcmp(argv[k], "&") == 0)
-        {
             break;
-        }
-        if (strcmp(argv[k], "|") == 0)
+        
+        if (strcmp(argv[k], "|") == 0) // Encontrei uma nova PIPE
         {
-            if (k == *i)
+            if (k == *i) // Se essa PIPE for a primeira
             {
-                posicao_pipe[cont] = *i - posicao_operador - 1;
+                quantarg[cont] = *i - posicao_operador - 1;
             }
-            else
+            else // Se essa PIPE for a  segunda, terceira...... n
             {
-                posicao_pipe[cont] = k - passados - 1 - cont;
-                passados = passados + posicao_pipe[cont];
+                quantarg[cont] = k - passados - 1 - cont;
+                passados = passados + quantarg[cont];
             }
 
             numpipes++;
             cont++;
         }
     }
-    posicao_pipe[cont] = k - passados - 1 - cont;
+    // Nessa logica o ultimo pipe nao eh considerado dentro do for, entao alocamos aqui fora
+    quantarg[cont] = k - passados - 1 - cont;
+
+    // Defiimos uma struct para armazenar os argumentos
+    // Seria mais simples se tivessemos feito isso para os outros operadores
     struct comando
     {
         char *argumentos[LIST_LEN];
@@ -123,46 +129,50 @@ int Execucao_Pipe(char **argv, int argc, int *i, int posicao_operador)
     struct comando comandos[20];
     int j = posicao_operador + 1;
 
-    for (int m = 0; m < numpipes; m++)
-    {
-        for (int n = 0; n < posicao_pipe[m]; n++)
+    for (int m = 0; m < numpipes; m++)// laco externo que percorre os pipes
+    {   
+        for (int n = 0; n < quantarg[m]; n++)// laco interno percorre os argumentos de cada pipe
         {
             comandos[m].argumentos[n] = argv[j];
             j++;
         }
         j = j + 1;
     }
+    //atualiza i em tratarEntrada
     *i = k - 1;
-    int entrada = STDIN_FILENO;
+
+    //comecando a logica do pipe em si
+    int entrada = STDIN_FILENO; // entrada recebe a entrada padrao
     int p;
 
     for (int p = 0; p < numpipes; p++)
     {
-
-        int fd[2];
+        int fd[2]; // descritores de arquivo
         pid_t pid;
         int status;
-        if (pipe(fd) == -1)
+        if (pipe(fd) == -1) //pipe
             perror("pipe()");
-        if ((pid = fork()) == -1)
+        if ((pid = fork()) == -1) //fork
             perror("fork()");
 
-        if (pid == 0)
+        if (pid == 0) // processo filho
         {
-
-            close(fd[0]);
-            Tratar_Descritores(entrada, fd[1]);
+            close(fd[0]); // nao usa o descritor de leitura
+            Tratar_Descritores(entrada, fd[1]); // coloca no descritor de escrita oq tiver em entrada
             execvp(comandos[p].argumentos[0], comandos[p].argumentos);
         }
-        else
+        else // processo pai
         {
-            waitpid(-1, &status, 0);
-            close(fd[1]);
-            close(entrada);
-            entrada = fd[0];
+            waitpid(-1, &status, 0); // espera o filho 
+            close(fd[1]); // fecha o descritor de escrita
+            close(entrada); // fecha a entrada antes de sobrescrever
+            entrada = fd[0]; //entrada recebe o descritor de leitura
         }
     }
-    Tratar_Descritores(entrada, STDOUT_FILENO);
+    // o ultimo pipe tem que ser tratado fora do for
+    Tratar_Descritores(entrada, STDOUT_FILENO); // coloca na saida padrao o conteudo de entrada
+    // para executar esse ultimo pipe tivemos que criar um novo fork para que o processo como um todo
+    // nao acabe com a execucao de execvp
     int status;
     pid_t pid2;
     if ((pid2 = fork()) == -1)
