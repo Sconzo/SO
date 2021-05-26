@@ -194,15 +194,39 @@ void Tratar_Entrada(char **argv, int argc)
     {
         if (strcmp(argv[i], "|") == 0) // comandos encadeados
         {
-            status = Execucao_Pipe(argv, argc, &i, posicao_operacao);
-            memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
-            migue = 0;
-            cont = 0;
-            ultimo_comando = 5;
+            
+            if (ultimo_comando == 3) // Caso ultimo comando AND
+            {
+                if (status == 0) // Caso o ultimo processo tenha sido bem sucedido
+                    status = Execucao_Pipe(argv, argc, &i, posicao_operacao);
+                else // Caso o ultimo processo nao tenha sido bem sucedido
+                    status = 99;
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 5;
+            }
+            else if (ultimo_comando == 2) // Caso ultimo comando OR
+            {
+                if (status > 0) //Caso tenha um erro no ultimo processo
+                    status = Execucao_Pipe(argv, argc, &i, posicao_operacao);
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 5;
+            }
+            else
+            {
+                status = Execucao_Pipe(argv, argc, &i, posicao_operacao);
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 5;
+            }
+        
         }
         else if (strcmp(argv[i], ";") == 0) // comandos independentes
         {
-            printf("Ultimo comando -> %d\n", ultimo_comando);
             posicao_operacao = i;
             if (ultimo_comando == 3) // Caso ultimo comando AND
             {
@@ -215,15 +239,13 @@ void Tratar_Entrada(char **argv, int argc)
                 cont = 0;
                 ultimo_comando = 1;
             }
-            else if (ultimo_comando == 2)// Caso ultimo comando OR
+            else if (ultimo_comando == 2) // Caso ultimo comando OR
             {
-                if (status > 0) //Caso tenha um erro no ultimo processo 
-                {
+                if (status > 0) //Caso tenha um erro no ultimo processo
                     status = Execucao_Padrao(&argumentos_execucao[migue]);
-                    memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
-                    migue = 0;
-                    cont = 0;
-                }
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
                 ultimo_comando = 1;
             }
             else if (ultimo_comando == 5) //Caso ultimo comando PIPE
@@ -241,9 +263,9 @@ void Tratar_Entrada(char **argv, int argc)
                 cont = 0;
                 ultimo_comando = 1;
             }
-            printf("Ultimo comando -> %d\n", ultimo_comando);
+        
         }
-            
+
         else if (strcmp(argv[i], "||") == 0) //comando condicional OR
         {
             posicao_operacao = i;
@@ -258,16 +280,14 @@ void Tratar_Entrada(char **argv, int argc)
                 cont = 0;
                 ultimo_comando = 2;
             }
-            else if (ultimo_comando == 2)// Caso ultimo comando OR
+            else if (ultimo_comando == 2) // Caso ultimo comando OR
             {
-                if (status > 0) //Caso tenha um erro no ultimo processo 
-                {
+                if (status > 0) //Caso tenha um erro no ultimo processo
                     status = Execucao_Padrao(&argumentos_execucao[migue]);
-                    memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
-                    migue = 0;
-                    cont = 0;
-                    ultimo_comando = 2;
-                }
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 2;
             }
             else if (ultimo_comando == 5) //Caso ultimo comando PIPE
             {
@@ -292,7 +312,7 @@ void Tratar_Entrada(char **argv, int argc)
             {
                 if (status == 0) // bem sucedido
                     status = Execucao_Padrao(&argumentos_execucao[migue]);
-                else   // erro
+                else // erro
                     status = 99;
                 memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
                 migue = 0;
@@ -302,13 +322,11 @@ void Tratar_Entrada(char **argv, int argc)
             else if (ultimo_comando == 2) // Caso ultimo comando OR
             {
                 if (status > 0) // erro
-                {
                     status = Execucao_Padrao(&argumentos_execucao[migue]);
-                    memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
-                    migue = 0;
-                    cont = 0;
-                    ultimo_comando = 3;
-                }
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 3;
             }
             else if (ultimo_comando == 5) // CAso ultimo comando PIPE
             {
@@ -329,11 +347,41 @@ void Tratar_Entrada(char **argv, int argc)
 
         else if (strcmp(argv[i], "&") == 0) // comando em background
         {
-            Execucao_Background(&argumentos_execucao[migue]);
-            memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
-            migue = 0;
-            cont = 0;
-            ultimo_comando = 4;
+            if (ultimo_comando == 3) // Caso ultimo comando AND
+            {
+                if (status == 0) // Caso o ultimo processo tenha sido bem sucedido
+                    status = Execucao_Background(&argumentos_execucao[migue]);
+                else // Caso o ultimo processo nao tenha sido bem sucedido
+                    status = 99;
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 4;
+            }
+            else if (ultimo_comando == 2) // Caso ultimo comando OR
+            {
+                if (status > 0) //Caso tenha um erro no ultimo processo
+                    status = Execucao_Background(&argumentos_execucao[migue]);
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 4;
+            }
+            else if (ultimo_comando == 5) //Caso ultimo comando PIPE
+            {
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 4;
+            }
+            else
+            {
+                status = Execucao_Background(&argumentos_execucao[migue]);
+                memset(argumentos_execucao, 0, sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 4;
+            }
         }
         else
         {
@@ -341,7 +389,6 @@ void Tratar_Entrada(char **argv, int argc)
             cont++;
         }
     }
-    printf("Ultimo comando -> %d\n", ultimo_comando);
     if (ultimo_comando == 0 || ultimo_comando == 1)
         Execucao_Padrao(&argumentos_execucao[migue]);
     if (ultimo_comando == 2)
