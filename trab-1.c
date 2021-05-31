@@ -36,7 +36,7 @@ int Execucao_Background(char** cmd)
     else if (pid > 0) // processo pai espera o término do filho
     {
         int status;
-        printf("Valor Status -> %d\n",status);
+        //printf("Valor Status -> %d\n",status);
         return status;
     }
     else // caso de erro
@@ -201,7 +201,7 @@ void Tratar_Entrada(char** argv, int argc)
 
     for(int i=0;i<argc;i++)
     {
-        
+        //printf("argv[%d] = %s\n", i, argv[i]);
         if (strcmp(argv[i],"|") == 0) // PIPE
         {
             //printf("Antes do fork ->%d\n", i);
@@ -214,7 +214,7 @@ void Tratar_Entrada(char** argv, int argc)
             //}
             //else{
             status = Execucao_Pipe(argv,argc,&i,posicao_operacao);
-            //printf("%d\n",status);
+            //printf("Valor status %d\n",status);
             memset(argumentos_execucao,0,sizeof(argumentos_execucao));
             //printf("Depois do fork ->%d\n", i);
             migue = 0;
@@ -263,6 +263,13 @@ void Tratar_Entrada(char** argv, int argc)
                     ultimo_comando = 2;
                 }
             }
+            else if (ultimo_comando == 5)
+            {
+                memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 2;
+            }
             else{
                 status = Execucao_Padrao(&argumentos_execucao[migue]);
                 memset(argumentos_execucao,0,sizeof(argumentos_execucao));
@@ -303,6 +310,13 @@ void Tratar_Entrada(char** argv, int argc)
                     ultimo_comando = 3;
                 }
             }
+            else if (ultimo_comando == 5)
+            {
+                memset(argumentos_execucao,0,sizeof(argumentos_execucao));
+                migue = 0;
+                cont = 0;
+                ultimo_comando = 3;
+            }
             else{
                 status = Execucao_Padrao(&argumentos_execucao[migue]);
                 memset(argumentos_execucao,0,sizeof(argumentos_execucao));
@@ -322,17 +336,17 @@ void Tratar_Entrada(char** argv, int argc)
             ultimo_comando = 4;
         }
         else{
-            argumentos[cont_arg] = argv[i]; 
             argumentos_execucao[cont] =  argv[i];
             cont++;
-            cont_arg++;
         }
     }
     
     if(ultimo_comando == 0 || ultimo_comando == 1) Execucao_Padrao(&argumentos_execucao[migue]);
+    //printf("Valor status %d\n", status);
     if(ultimo_comando == 2)
     {
         if(status > 0)Execucao_Padrao(&argumentos_execucao[migue]);
+        //printf("AQUI\n");}
     }
     if(ultimo_comando == 3)
     {
