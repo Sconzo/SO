@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         close(rev_fd[0]);
         bzero(msg,STR_LEN);
 
-        if (read(fd[0],msg,STR_LEN) > 0)
+        if (read(STDIN_FILENO,msg,STR_LEN) > 0)
         {
             printf("Filho de PID %ld leu a seguinte mensagem:\n\t%s\n", (long)getpid(),msg);
         }

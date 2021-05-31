@@ -189,11 +189,11 @@ void Tratar_Entrada(char **argv, int argc)
 {
     // A ideia inicial eh que em um laço for a gente pegue os argumentos que serao executados de cada vez
     // nao funcionou para o comando pipe, que tivemos que usar uma outra lógica
-    char *argumentos_execucao[LIST_LEN]; // guarda os argumentos que serao executados no tempo T
-    int cont = 0;                        // quantos argumentos estão na lista de argumentos
-    int migue = 1;                       //garante que nao usamos o primeiro elemento da string de entrada (o ./trab-1-apresentacao)
-    int status = -1;                     // status == 0 processo executou corretamente // status > 0 erro na execucao. Importante para as funcoes logica
-    int ultimo_comando = 0;              // guarda o ultimo comando executado
+    char *argumentos_execucao[LIST_LEN]; // guarda os argumentos que serao executados em uma passagem laco
+    int cont = 0;     // quantos argumentos estão na lista de argumentos
+    int migue = 1;    //garante que nao usamos o primeiro elemento da string de entrada (o ./trab-1-apresentacao)
+    int status = -1;  // status == 0 processo executou corretamente // status > 0 erro na execucao. Importante para as funcoes logica
+    int ultimo_comando = 0;  // guarda o ultimo comando executado
     // 0 -> nenhum comando // 1-> ; // 2-> || // 3-> && // 4-> & // 5-> |
     int posicao_operacao = 0; //importante para o comando pipe saber onde comecar seu laço for
 
@@ -393,12 +393,14 @@ void Tratar_Entrada(char **argv, int argc)
                 ultimo_comando = 4;
             }
         }
-        else
+        else // nao encontrou nenhum operador
         {
             argumentos_execucao[cont] = argv[i];
             cont++;
         }
     }
+
+
     if (ultimo_comando == 0 || ultimo_comando == 1)
         Execucao_Padrao(&argumentos_execucao[migue]);
     if (ultimo_comando == 2)
