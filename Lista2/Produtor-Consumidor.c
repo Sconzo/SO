@@ -22,8 +22,8 @@ void *Consome ()
         sleep(1);
         pthread_mutex_lock(&mutex);
         if(cont>0){
-            printf("Consumido item Vetor[%d]=%d\n", cont,vetor[cont]);
-            vetor[cont] = 0;
+            printf("Consumido item Vetor[%d]=%d\n", cont,vetor[cont-1]);
+            vetor[cont-1] = 0;
             cont--;
         }
         pthread_mutex_unlock(&mutex);
